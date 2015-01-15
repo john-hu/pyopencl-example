@@ -32,9 +32,10 @@ def opencl_histogram(img):
   # create buffers
   mf = cl.mem_flags
   bufPixels = cl.Buffer(clContext, mf.READ_ONLY | mf.USE_HOST_PTR, hostbuf=pixels)
+  bufPixelSize = cl.Buffer(clContext, mf.READ_ONLY | mf.USE_HOST_PTR, size=4, hostbuf=numpy.asarray([pixelSize]).astype(numpy.uint32))
   bufOutput = cl.Buffer(clContext, mf.WRITE_ONLY, size=outputBufSize * 4, hostbuf=None)
   start_time = time()
-  clProgram.histogram(clQueue, (globalSize, ), (groupSize, ), bufPixels, bufOutput)
+  clProgram.histogram(clQueue, (globalSize, ), (groupSize, ), bufPixels, bufPixelSize, bufOutput)
   end_time = time()
   print ('time: {}'.format(end_time - start_time))
   semiFinal = numpy.zeros(outputBufSize, dtype=numpy.uint32)
@@ -61,16 +62,21 @@ image = Image.open(args.input)
 
 (width, height) = image.size
 
-# start_time = time()
-# histogram = cpu_histogram(image)
-# end_time = time()
+print ('-' * 20)
+# the histogram format is RRRR...RRGGGG...GGGBBB...BBB.
+start_time = time()
+histogram = cpu_histogram(image)
+end_time = time()
+print ('time elapsed with sequential CPU: {0}s'.format(end_time - start_time))
+
+print ('-' * 20)
 
 start_time = time()
 histogram = opencl_histogram(image)
 end_time = time()
+print ('time elapsed with open cl: {0}s'.format(end_time - start_time))
 
 print ('-' * 20)
-print ('time elapsed: {0}s'.format(end_time - start_time))
 print ('file.mode: {}'.format(image.mode))
 print ('file.size: {0}x{1}'.format(width, height))
 print ('file.format: {}'.format(image.format))
