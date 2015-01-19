@@ -14,6 +14,7 @@ __kernel void histogram(__global unsigned char* bytes, __global unsigned int* pi
   unsigned int basePixelIdx = lid * BIN_SIZE + gid * gsize * BIN_SIZE;
   unsigned int baseResultIdx = globalId * RESULT_SIZE;
   unsigned int maxPixel = *pixelCount;
+  unsigned int privateBuffer[RESULT_SIZE];
 
   for (i = 0; i < RESULT_SIZE; i++) {
     result[baseResultIdx + i] = 0;
@@ -24,13 +25,17 @@ __kernel void histogram(__global unsigned char* bytes, __global unsigned int* pi
     // data partition of bytes is RGBRGBRGB....
     bValue = bytes[basePixelIdx * 3 + processIndex * 3];
     // result partition is RR..RRGG..GGBB..BB.
-    result[baseResultIdx + bValue]++;
+    privateBuffer[bValue]++;
     // G
     bValue = bytes[basePixelIdx * 3 + processIndex * 3 + 1];
-    result[baseResultIdx + 256 + bValue]++;
+    privateBuffer[256 + bValue]++;
     // B
     bValue = bytes[basePixelIdx * 3 + processIndex * 3 + 2];
-    result[baseResultIdx + 512 + bValue]++;
+    privateBuffer[512 + bValue]++;
     processIndex++;
+  }
+
+  for (i = 0; i < RESULT_SIZE; i++) {
+    result[baseResultIdx + i] = privateBuffer[i];
   }
 }

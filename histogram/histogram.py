@@ -12,6 +12,7 @@ def cpu_histogram(img):
 def opencl_histogram(pixels):
   # format of pixels is RGBRGBRGB each of character in a byte
   # calculate buffer size
+  start_time = time()
   groupSize = 4
   binSize = 1024
   pixelSize = len(pixels) / 3 
@@ -36,11 +37,14 @@ def opencl_histogram(pixels):
   semiFinal = numpy.zeros(outputBufSize, dtype=numpy.uint32)
   evt = cl.enqueue_read_buffer(clQueue, bufOutput, semiFinal)
   evt.wait()
-
+  end_time = time()
+  print ('time elapsed with open cl: {0}s'.format(end_time - start_time))
+  start_time = time()
   finalResult = [0] * 768
   for i in range(outputBufSize):
     finalResult[i % 768] += semiFinal[i]
-
+  end_time = time()
+  print ('time elapsed with merging: {0}s'.format(end_time - start_time))
   return finalResult
 
 parser = argparse.ArgumentParser(description='Dump histogram data.')
